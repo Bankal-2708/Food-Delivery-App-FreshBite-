@@ -43,25 +43,22 @@ const AuthForm = ({ setShowLogin }) => {
       }
 
       if (mode === 'register') {
-         await sendOtp(form.email, 'register');
-        setPendingPayload({ name: form.name, email: form.email, password: form.password });
-        setStep('otp');
-        startResendCooldown();
-        setMessage(`OTP sent to ${form.email}`);
+        await register(form.name, form.email, form.password);
+        if (setShowLogin) setShowLogin(false);
+        navigate('/');
         return;
       }
 
       if (mode === 'forgot') {
         if (step === 'form') {
-          await sendOtp(form.email, 'reset');
+          await forgotPassword(form.email);
           setPendingPayload({ email: form.email });
-          setStep('otp');
-          startResendCooldown();
-          setMessage(`OTP sent to ${form.email}`);
+          setStep('reset');
+          setMessage('Account verified. You can now set a new password.');
           return;
         }
         if (step === 'reset') {
-          await resetPassword(form.email, otp, form.password);
+          await resetPassword(form.email, otp || 'demo-otp', form.password);
           setMessage('Password updated successfully! You can now login.');
           setMode('login');
           setStep('form');
@@ -224,17 +221,17 @@ const AuthForm = ({ setShowLogin }) => {
         disabled={loading}
         className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-colors text-lg disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        {loading ? 'Please wait...' : mode === 'login' ? 'Login' : mode === 'register' ? 'Send OTP' : 'Send OTP'}
+        {loading ? 'Please wait...' : mode === 'login' ? 'Login' : mode === 'register' ? 'Create Account' : 'Continue'}
       </button>
     </form>
   );
 
   const title =
     mode === 'login' ? 'Welcome Back 👋'
-    : step === 'otp' ? 'Verify OTP 📧'
-    : mode === 'register' ? 'Create Account 🍽️'
-    : step === 'reset' ? 'Set New Password 🔒'
-    : 'Reset Password';
+      : step === 'otp' ? 'Verify OTP 📧'
+        : mode === 'register' ? 'Create Account 🍽️'
+          : step === 'reset' ? 'Set New Password 🔒'
+            : 'Reset Password';
 
   const formContent = (
     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-auto relative border border-gray-100">

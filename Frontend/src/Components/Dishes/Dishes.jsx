@@ -18,7 +18,7 @@ import Rice_Kheer from "../../assets/Rice_Kheer.jpeg";
 import add from "../../assets/add.png";
 import greenAdd from "../../assets/green_add.png";
 import minus from "../../assets/minus.png";
-// import sampleDishes from "../../data/sampleDishes";
+import sampleDishes from "../../data/sampleDishes";
 
 const nameImageMap = {
   Pizza,
@@ -37,9 +37,9 @@ const nameImageMap = {
   "Rice Kheer": Rice_Kheer,
 };
 
-function Dishes({ category, searchTerm = "" }) {
+function Dishes({ category, searchTerm = "", setCategory }) {
   const { cart = [], addItemToCart, removeItemFromCart, debounce, setSearchTerm } = useContext(CartContext);
-  const [dishes, setDishes] = useState([]);
+  const [dishes, setDishes] = useState(sampleDishes);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState('');
 
@@ -56,19 +56,19 @@ function Dishes({ category, searchTerm = "" }) {
           setDishes(res.data);
           console.debug('setDishes count:', res.data.length);
         } else if (Array.isArray(res)) {
-           
+
           setDishes(res);
           console.debug('setDishes count (array):', res.length);
         } else {
           console.error('Unexpected API structure:', res);
-          setFetchError('Unexpected API response');
+          setDishes(sampleDishes);
+          setFetchError('Backend response was unexpected — showing demo dishes instead.');
         }
       })
       .catch((err) => {
         console.error(err);
+        setDishes(sampleDishes);
         setFetchError(String(err) + ' — using sample data');
-        // Fallback to local sample data so UI remains usable during development
-        // setDishes(sampleDishes);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -94,7 +94,7 @@ function Dishes({ category, searchTerm = "" }) {
     return matchesCategory && matchesSearch;
   }) || [];
 
-   console.debug('dishes length', dishes.length, 'filtered', filteredDishes.length, 'category', category, 'searchValue', (searchTerm || debounce || ''));
+  console.debug('dishes length', dishes.length, 'filtered', filteredDishes.length, 'category', category, 'searchValue', (searchTerm || debounce || ''));
 
   return (
     <div className="w-full px-6 md:px-16 py-8 bg-white">
@@ -123,7 +123,9 @@ function Dishes({ category, searchTerm = "" }) {
                   <div>
                     <button
                       onClick={() => {
-                        setCategory("All");
+                        if (typeof setCategory === "function") {
+                          setCategory("All");
+                        }
                         if (typeof setSearchTerm === "function") setSearchTerm("");
                       }}
                       className="rounded-md bg-orange-500 px-4 py-2 text-white font-semibold"
