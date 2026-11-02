@@ -18,6 +18,7 @@ export default function App() {
   const [imagePreview, setImagePreview] = useState(null);
   const [toast, setToast] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [role, setRole] = useState(localStorage.getItem("role") || "");
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
 
   const showToast = useCallback((msg, type = "success") => {
@@ -36,8 +37,20 @@ export default function App() {
       });
       const data = await res.json();
       if (data.success) {
+        // This is a staff-only panel: block anyone whose account isn't admin/restaurantManager,
+        // even though their email+password were correct. Otherwise a plain customer account
+        // would "log in" here and then silently hit 403s on every orders/food action.
+        const allowedRoles = ["admin", "restaurantManager"];
+        if (!allowedRoles.includes(data.user?.role)) {
+          showToast("This account doesn't have admin/manager access.", "error");
+          setLoading(false);
+          return;
+        }
+
         localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.user.role);
         setToken(data.token);
+        setRole(data.user.role);
         setLoginForm({ email: "", password: "" });
         showToast("Logged in successfully!");
       } else {
@@ -51,7 +64,9 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
     setToken("");
+    setRole("");
     setTab("dishes");
     showToast("Logged out!");
   };
@@ -234,6 +249,7 @@ export default function App() {
             setImagePreview={setImagePreview} 
             initialForm={initialForm} 
             handleLogout={handleLogout} 
+            role={role}
           />
           
           {toast && (
@@ -267,6 +283,7 @@ export default function App() {
             handleImageUpload={handleImageUpload}
             handleOrderAction={handleOrderAction}
             fetchOrders={fetchOrders}
+            role={role}
           />
         </div>
       )}

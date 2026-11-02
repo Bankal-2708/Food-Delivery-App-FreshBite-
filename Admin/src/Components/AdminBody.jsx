@@ -21,6 +21,7 @@ export default function AdminBody({
   handleImageUpload,
   handleOrderAction,
   fetchOrders,
+  role,
 }) {
   const statusColor = { pending: "#f59e0b", confirmed: "#10b981", delivered: "#6366f1", cancelled: "#ef4444" };
 
@@ -194,7 +195,7 @@ export default function AdminBody({
                         🚚 Mark Delivered
                       </button>
                     )}
-                    {order.status !== "delivered" && order.status !== "cancelled" && (
+                    {role === "admin" && order.status !== "delivered" && order.status !== "cancelled" && (
                       <button onClick={() => handleOrderAction(order._id, "cancel")}
                         style={{ padding: "8px 16px", background: "transparent", border: "1px solid #ef4444", color: "#ef4444", borderRadius: 7, cursor: "pointer", fontSize: 13 }}>
                         ✕ Cancel
