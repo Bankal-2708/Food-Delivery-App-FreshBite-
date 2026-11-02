@@ -14,7 +14,7 @@ function Navbar() {
   const [showLogin, setShowLogin] = useState(false);
   const { pathname } = useLocation();
 
-  const totalQuantity = cart?.reduce((sum, item) => sum + item.count, 0);
+  const totalQuantity = cart?.reduce((sum, item) => sum + Number(item.count || 0), 0);
 
   const navLinkClass = ({ isActive }) =>
     isActive ? "text-orange-700 font-bold" : "text-black";

@@ -22,6 +22,25 @@ const buildApiUrl = (path) => {
   return `${API}${cleanPath}`;
 };
 
+const getCartStorageKey = (email) => {
+  const safeEmail = String(email || 'guest').trim().toLowerCase();
+  return safeEmail && safeEmail !== 'guest' ? `cart_${safeEmail}` : 'cart_guest';
+};
+
+const readStoredCart = (email) => {
+  const key = getCartStorageKey(email);
+  const raw = localStorage.getItem(key) || localStorage.getItem('cart');
+
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 const requestJson = async (url, options = {}) => {
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
@@ -45,8 +64,14 @@ const requestJson = async (url, options = {}) => {
 };
 
 const CartContextProvider = ({ children }) => {
-  const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('cart')) || []);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
+    return savedUser || null;
+  });
+  const [cart, setCart] = useState(() => {
+    const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
+    return readStoredCart(savedUser?.email);
+  });
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [searchTerm, setSearchTerm] = useState('');
   const [debounce, setDebounce] = useState('');
@@ -96,8 +121,16 @@ const CartContextProvider = ({ children }) => {
   }, [token, authHeaders]);
 
   useEffect(() => {
+    const storageKey = getCartStorageKey(user?.email);
+    localStorage.setItem(storageKey, JSON.stringify(cart));
     localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
+  }, [cart, user?.email]);
+
+  useEffect(() => {
+    if (user?.email) {
+      setCart(readStoredCart(user.email));
+    }
+  }, [user?.email]);
 
   useEffect(() => {
     if (!token || isInitialLoad) return;
@@ -125,6 +158,16 @@ const CartContextProvider = ({ children }) => {
     return itemOrId;
   };
 
+  const normalizeCartItem = (item = {}) => {
+    const key = getItemKey(item);
+    return {
+      ...item,
+      _id: item._id || item.id || key,
+      id: item.id || item._id || key,
+      count: Number(item.count || 0),
+    };
+  };
+
   const addItemToCart = (item) => {
     if (!token) {
       alert('Please login to add items to your cart!');
@@ -134,15 +177,16 @@ const CartContextProvider = ({ children }) => {
     const itemKey = getItemKey(item);
 
     setCart((prev) => {
-      const exists = prev.find((i) => getItemKey(i) === itemKey);
+      const normalizedPrev = prev.map(normalizeCartItem);
+      const exists = normalizedPrev.find((i) => getItemKey(i) === itemKey);
 
       if (exists) {
-        return prev.map((i) =>
-          getItemKey(i) === itemKey ? { ...i, count: (i.count || 0) + 1 } : i
+        return normalizedPrev.map((i) =>
+          getItemKey(i) === itemKey ? { ...i, count: Number(i.count || 0) + 1 } : i
         );
       }
 
-      return [...prev, { ...item, count: 1 }];
+      return [...normalizedPrev, { ...normalizeCartItem(item), count: 1 }];
     });
   };
 
@@ -150,17 +194,16 @@ const CartContextProvider = ({ children }) => {
     const itemKey = getItemKey(itemId);
 
     setCart((prev) => {
-      const exists = prev.find((i) => getItemKey(i) === itemKey);
+      const normalizedPrev = prev.map(normalizeCartItem);
+      const exists = normalizedPrev.find((i) => getItemKey(i) === itemKey);
 
       if (!exists) return prev;
 
-      if ((exists.count || 1) === 1) {
-        return prev.filter((i) => getItemKey(i) !== itemKey);
-      }
+      const nextItems = normalizedPrev
+        .map((i) => getItemKey(i) === itemKey ? { ...i, count: Number(i.count || 0) - 1 } : i)
+        .filter((i) => Number(i.count || 0) > 0);
 
-      return prev.map((i) =>
-        getItemKey(i) === itemKey ? { ...i, count: (i.count || 1) - 1 } : i
-      );
+      return nextItems;
     });
   };
 
@@ -251,7 +294,6 @@ const CartContextProvider = ({ children }) => {
 
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    localStorage.removeItem('cart');
 
     setToken('');
     setUser(null);

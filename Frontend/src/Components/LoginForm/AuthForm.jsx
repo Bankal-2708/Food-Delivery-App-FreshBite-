@@ -7,7 +7,7 @@ const AuthForm = ({ setShowLogin }) => {
   const navigate = useNavigate();
   const [mode, setMode] = useState('login');
   const [step, setStep] = useState('form'); // form | otp | reset
-  const [pendingPayload, setPendingPayload] = useState(null); // holds form data while OTP is pending
+  const [pendingPayload, setPendingPayload] = useState(null); // hold otp
   const [otp, setOtp] = useState('');
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');

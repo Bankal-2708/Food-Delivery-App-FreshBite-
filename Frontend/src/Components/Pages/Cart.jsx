@@ -9,7 +9,7 @@ function Cart() {
   const navigate = useNavigate();
   const { cart = [], addItemToCart, removeItemFromCart, clearCart } = useContext(CartContext);
 
-  const filteredItems = cart.filter((item) => item.count > 0);
+  const filteredItems = cart.filter((item) => Number(item.count || 0) > 0);
 
   const totalPrice = filteredItems.reduce((acc, item) => {
     const price = Number(String(item.price).replace(/[^\d.]/g, '')) || 0;
