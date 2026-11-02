@@ -225,6 +225,7 @@ const CartContextProvider = ({ children }) => {
 
     setToken(demoToken);
     setUser(demoUser);
+    setCart(readStoredCart(demoUser.email));
 
     return { token: demoToken, user: demoUser };
   };
@@ -246,6 +247,7 @@ const CartContextProvider = ({ children }) => {
 
       setToken(data.token);
       setUser(data.user);
+      setCart(readStoredCart(data.user?.email));
 
       return data;
     } catch (error) {
@@ -269,6 +271,7 @@ const CartContextProvider = ({ children }) => {
 
       setToken(data.token);
       setUser(data.user);
+      setCart(readStoredCart(data.user?.email));
 
       return data;
     } catch (error) {
